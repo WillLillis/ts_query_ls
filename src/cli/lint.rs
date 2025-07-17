@@ -70,7 +70,7 @@ pub(super) async fn lint_file(
     }
 
     let path_str = path.to_str().expect("Path should be valid UTF-8");
-    let mut edits = Vec::new();
+    let mut edits = Vec::with_capacity(if fix { diagnostics.len() } else { 0 });
     if !fix {
         exit_code.store(1, std::sync::atomic::Ordering::Relaxed);
     }

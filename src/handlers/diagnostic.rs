@@ -240,18 +240,18 @@ async fn get_diagnostics_recursively(
     // wrap in `spawn_blocking`. We can't merge this with the main iteration loop because it would
     // cause a race condition, due to holding the `options` lock while `await`ing.
     let handle = tokio::task::spawn_blocking(move || {
-        let provider = TextProviderRope(&rope);
-        let mut cursor = QueryCursor::new();
-        let mut matches = cursor.matches(&DEFINITIONS_QUERY, tree.root_node(), &provider);
-        let mut diagnostics = Vec::new();
         let Some(LanguageData {
             language,
             name: language_name,
             ..
         }) = ld.as_deref()
         else {
-            return diagnostics;
+            return Vec::new();
         };
+        let provider = TextProviderRope(&rope);
+        let mut cursor = QueryCursor::new();
+        let mut matches = cursor.matches(&DEFINITIONS_QUERY, tree.root_node(), &provider);
+        let mut diagnostics = Vec::new();
         while let Some(match_) = matches.next() {
             for capture in match_.captures {
                 if let Some(offset) = if cache {
@@ -1836,7 +1836,7 @@ mod test {
         #[case] expected_diagnostics: &[Diagnostic],
     ) {
         // Arrange
-        let mut service = initialize_server(&[document.clone()], &options).await;
+        let mut service = initialize_server(std::slice::from_ref(&document), &options).await;
 
         // Act
         let actual_diagnostics = service
